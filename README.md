@@ -88,6 +88,7 @@ How To Use
 导出各种类型的数据
 ===
 在Config中修改GeneratorType的属性去生成不同的类型的数据文件
+目前仅支持Json,Sqlite
 
 正在计划
 ===
