@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -12,8 +11,7 @@ namespace DreamExcel.Core
     {
         public static string ExePath
         {
-            get;
-            set;
+            get { return Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location); }
         }
 
         public static Data Info
@@ -52,41 +50,25 @@ namespace DreamExcel.Core
 
         public static void WriteScript(string file, string content)
         {
-            try
+            foreach (var node in Info.SaveScriptPath)
             {
-                foreach (var node in Info.SaveScriptPath)
+                if (Path.IsPathRooted(node))
                 {
-                    if (Path.IsPathRooted(node))
-                    {
-                        var path = node + Path.DirectorySeparatorChar + file;
-                        var dir = Path.GetDirectoryName(path);
-                        if (!Directory.Exists(dir))
-                            Directory.CreateDirectory(dir);
-                        File.WriteAllText(path, content);
-                        Console.ForegroundColor = ConsoleColor.Green;
-                        Console.WriteLine("导出脚本文件| " + new FileInfo(path).FullName);
-                        Console.ForegroundColor = ConsoleColor.White;
-                    }
-                    else
-                    {
-                        var path = ExePath + Path.DirectorySeparatorChar + node + Path.DirectorySeparatorChar + file;
-                        var dir = Path.GetDirectoryName(path);
-                        if (!Directory.Exists(dir))
-                            Directory.CreateDirectory(dir);
-                        File.WriteAllText(path, content);
-                        Console.ForegroundColor = ConsoleColor.Green;
-                        Console.WriteLine("导出脚本文件| " + new FileInfo(path).FullName);
-                        Console.ForegroundColor = ConsoleColor.White;
-                    }
+                    var path = node + Path.DirectorySeparatorChar + file;
+                    var dir = Path.GetDirectoryName(path);
+                    if (!Directory.Exists(dir))
+                        Directory.CreateDirectory(dir);
+                    File.WriteAllText(path, content);
+                }
+                else
+                {
+                    var path = ExePath + Path.DirectorySeparatorChar + node + Path.DirectorySeparatorChar + file;
+                    var dir = Path.GetDirectoryName(path);
+                    if (!Directory.Exists(dir))
+                        Directory.CreateDirectory(dir);
+                    File.WriteAllText(path, content);
                 }
             }
-            catch
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("导出脚本失败");
-                Console.ForegroundColor = ConsoleColor.White;
-            }
-
         }
 
         public static List<string> GetDBPath(string fileName)

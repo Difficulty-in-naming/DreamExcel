@@ -1,4 +1,4 @@
-# DreamExcel
+# Excel2Sqlite
 
 在Excel中生成出数据库文件和脚本文件,工作人员只需要像平常一样操作Excel,不需要点击任何按钮.
 
@@ -18,7 +18,7 @@ Features
 
 依赖库
 ===
-- ScriptGenerate https://github.com/GaLeGayGay/ScriptGenerate
+- ScriptGenerate https://github.com/pk27602017/ScriptGenerate
 
 Environment
 ===
@@ -67,7 +67,8 @@ How To Use
 
 如何填写自定义类型的数据
 ===
-如果你定义的类型为自定义类型.你可以选中该列下方的任意一处单元格并按下快捷键Ctrl + Shift + E进入Json编辑界面
+从第四行开始填写数据你可以先输入=UnityJson()生成出Json配置,然后将内容逐一填写即可
+![index](https://github.com/pk27602017/Excel2Sqlite/raw/master/Image/智能提示.png)
 
 如何过滤某一列的数据
 ===
@@ -88,7 +89,6 @@ How To Use
 导出各种类型的数据
 ===
 在Config中修改GeneratorType的属性去生成不同的类型的数据文件
-目前仅支持Json,Sqlite
 
 正在计划
 ===

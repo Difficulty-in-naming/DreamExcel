@@ -5,13 +5,15 @@
         public string Name;
         public string Type;
         public int Colunm;
-        public string Comment;
-        public TableStruct(string name, string type,string comment,int colunm)
+        public bool IsArray
+        {
+            get { return Type.EndsWith("[]"); }
+        }
+        public TableStruct(string name, string type,int colunm)
         {
             Name = name;
             Type = type;
             Colunm = colunm;
-            Comment = comment;
         }
     }
 }

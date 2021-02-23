@@ -2,20 +2,35 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>netcoreapp2.1</TargetFramework>
+        <TargetFramework>net5.0</TargetFramework>
         <LangVersion>latest</LangVersion>
     </PropertyGroup>
-
     <ItemGroup>
-      <PackageReference Include="MicroBatchFramework" Version="0.1.0-beta1" />
-      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.0.0-preview.19074.2" />
-      <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
-      <PackageReference Include="NPOI" Version="2.4.1" />
-      <PackageReference Include="System.Reflection.Emit" Version="4.6.0-preview.19073.11" />
+      <PackageReference Include="Hocon" Version="2.0.3" />
+      <PackageReference Include="Hocon.Json" Version="2.1.2" />
+      <PackageReference Include="Mono.TextTemplating" Version="2.2.0" />
+      <PackageReference Include="Nett" Version="0.15.0" />
+      <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+      <PackageReference Include="NPOI" Version="2.5.2" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\ScriptGenerate\ScriptGenerateNetCore\ScriptGenerateNetCore.csproj" />
+      <Compile Remove="Publish\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Remove="Publish\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Publish\**" />
+      <None Update="GenerateTemplate.txt">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\ScriptGenerator\ScriptGenerateNetCore\ScriptGenerateNetCore.csproj" />
     </ItemGroup>
 
 </Project>

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
-using System.Windows.Forms;
 using DreamLib.Editor.Unity.Extensition;
 using ScriptGenerate;
 
@@ -139,7 +138,7 @@ namespace DreamExcel.Core
             var path = Config.ScriptTemplatePath;
             string g = new Generate(path, action).StartWrite();
             g = Generate.FormatScript(g);
-            Config.WriteScript(fileName + ".cs", g);
+            Config.WriteScript(fileName + ".cs",g);
             return g;
         }
 

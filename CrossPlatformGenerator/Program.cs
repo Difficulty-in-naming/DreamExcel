@@ -1,42 +1,45 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using DreamExcel.Core;
-using MicroBatchFramework;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using NPOI.SS.UserModel;
-using NPOI.XSSF.UserModel;
-using TypeBuilder = System.Reflection.Emit.TypeBuilder;
 
 namespace CrossPlatformGenerator
 {
     internal class Program
-    {   
-        private static async Task Main(string[] args)
+    {
+        private static void Main(string[] args)
         {
-            //有Bug需要把路径的反斜杠转换一下
-            for (var index = 0; index < args.Length; index++)
+            if (args.Length == 2)
             {
-                args[index] = args[index].Replace("\\", "/");
+                if (args[0] == "Gen")
+                {
+                    Batch.Gen(args[1]);
+                }
+                else if (args[0] == "StartServer")
+                {
+                    Batch.StartServer(args[1]);
+                }
             }
-
-            await new HostBuilder()
-                .ConfigureLogging(x => x.AddConsole())
-                .RunBatchEngine(args);
-
-            new System.Threading.AutoResetEvent(false).WaitOne();
+            else
+            {
+                if (args[1] == "Gen")
+                {
+                    Batch.Gen(args[2]);
+                }
+                else if (args[1] == "StartServer")
+                {
+                    Batch.StartServer(args[2]);
+                }
+            }
+            Console.Read();
         }
 
-        public class Batch : BatchBase
+        public static class Batch 
         {
-            public void Gen([Option("p", "导出Excel的路径(填文件名导出单个,填文件夹名称导出该文件夹下所有Excel)")]
-                string path)
+            private static DateTime _lastTimeFileWatcherEventRaised;
+            private static FileSystemWatcher _watcher;
+            public static void Gen(string path)
             {
-                var attr = File.GetAttributes(path);
+                /*var attr = File.GetAttributes(path);
                 if ((attr & FileAttributes.Directory) == FileAttributes.Directory)
                 {
                     var extension = new List<string> {".xlsx", "xls"};
@@ -50,27 +53,56 @@ namespace CrossPlatformGenerator
                 {
                     WorkBookCore.AnalyzerExcel(path);
                     Console.WriteLine($"导出{path}成功");
-                }
+                }*/
             }
-
-            public void StartServer([Option("p","监听文件夹中的文件变化")]string path)
+            
+            public static void StartServer(string path)
             {
+                Console.WriteLine("开启服务器成功");
                 path = Path.GetDirectoryName(path);
-                FileSystemWatcher fsw = new FileSystemWatcher(path);
-                fsw.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.Attributes | NotifyFilters.Security | NotifyFilters.Size | NotifyFilters.CreationTime;
+                _watcher = new FileSystemWatcher(path);
+                GC.KeepAlive(_watcher);
+                _watcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.Attributes | NotifyFilters.Security | NotifyFilters.Size | NotifyFilters.CreationTime;
 //                fsw.Path = path;
-                fsw.EnableRaisingEvents = true;
-                fsw.Changed+=FswOnChanged;
-                fsw.IncludeSubdirectories = true;
+                _watcher.Filter = "*.csv";
+                _watcher.Changed+=FswOnChanged;
+                _watcher.Error += FswOnError;
+                _watcher.IncludeSubdirectories = true;
+
+                _watcher.EnableRaisingEvents = true;
             }
 
-            private void FswOnChanged(object sender, FileSystemEventArgs e)
+            private static void FswOnError(object sender, ErrorEventArgs e)
             {
-                string strFileExt = Path.GetExtension(e.FullPath);
-                if (strFileExt == ".xlsx" || strFileExt == ".xls")
+                Console.WriteLine("Watcher_Error: " + e.GetException().Message);
+            }
+
+            private static void FswOnChanged(object sender, FileSystemEventArgs e)
+            {
+                if (e.ChangeType == WatcherChangeTypes.Changed)
                 {
-                    WorkBookCore.AnalyzerExcel(e.FullPath);
-                    Console.WriteLine($"导出{e.FullPath}成功");
+                    string fileName = Path.GetFileName(e.FullPath);
+                    if( DateTime.Now.Subtract (_lastTimeFileWatcherEventRaised).TotalMilliseconds < 800 )
+                    {
+                        return;
+                    }
+                    _lastTimeFileWatcherEventRaised = DateTime.Now;
+                    try
+                    {
+                        var x = new FileInfo(e.FullPath).DirectoryName;
+                        Config.ExePath = x;
+                        if (fileName == null)
+                            return;
+                        if (fileName.StartsWith("~"))
+                            return;
+                        //WorkBookCore.AnalyzerExcel(e.FullPath);
+                        new CSVSerialize().AnalyzerExcel(e.FullPath);
+                    }
+                    catch(Exception exception)
+                    {
+                        Console.WriteLine(exception);
+                        Console.WriteLine($"导出{e.FullPath}失败");
+                    }
                 }
             }
         }

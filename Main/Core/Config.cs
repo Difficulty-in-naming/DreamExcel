@@ -1,52 +1,28 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Nett;
 
 namespace DreamExcel.Core
 {
     public class Config
     {
-        private string mSaveDbPath;
-
-        private string mSaveScriptPath;
-
-        public static Config Instance
+        public static Data Info
         {
             get
             {
-                var mInstance = new Config();
-                //如果工作目录下存在配置文件则读取工作目录下的配置
                 var configPath = WorkBookCore.App.ActiveWorkbook.Path + "/Config.txt";
-                string content;
-                if (File.Exists(configPath))
-                    content = File.ReadAllText(configPath);
-                else
-                    content = File.ReadAllText(CurrentPath + "/Config.txt");
-                content = Regex.Replace(content, @"\/\*((?:[^*]|(?:\*(?=[^\/])))*)\*\/", "");
-                content = content.Replace("\n", "").Replace("\r", "");
-                var split = content.Split(new[] {","}, StringSplitOptions.RemoveEmptyEntries);
-                for (var i = 0; i < split.Length; i++)
-                    if (split[i].StartsWith(nameof(SaveScriptPath)))
-                        mInstance.SaveScriptPath = GetValue(split[i]);
-                    else if (split[i].StartsWith(nameof(SaveDbPath)))
-                        mInstance.SaveDbPath = GetValue(split[i]);
-                    else if (split[i].StartsWith(nameof(ScriptNameSpace)))
-                        mInstance.ScriptNameSpace = GetValue(split[i]);
-                    else if (split[i].StartsWith(nameof(FileSuffix)))
-                        mInstance.FileSuffix = GetValue(split[i]);
-                    else if (split[i].StartsWith(nameof(EnumSuffix)))
-                        mInstance.EnumSuffix = GetValue(split[i]);
-                    else if (split[i].StartsWith(nameof(GeneratorType)))
-                        mInstance.GeneratorType = GetValue(split[i]);
-
-                return mInstance;
+                if (!File.Exists(configPath))
+                    configPath = CurrentPath + "/Config.txt";
+                return Toml.ReadFile<Data>(configPath);
             }
         }
 
         private static string CurrentPath => AppDomain.CurrentDomain.BaseDirectory;
 
-        public string ScriptTemplatePath
+        public static string ScriptTemplatePath
         {
             get
             {
@@ -57,34 +33,86 @@ namespace DreamExcel.Core
             }
         }
 
-        public string SaveScriptPath
+        public class Data
         {
-            get
-            {
-                if (mSaveScriptPath.Contains(":")) //盘符标志
-                    return mSaveScriptPath;
-                return WorkBookCore.App.ActiveWorkbook.Path + "\\" + mSaveScriptPath;
-            }
-            private set { mSaveScriptPath = value; }
-        }
-        public string GeneratorType { get; private set; } 
-        public string ScriptNameSpace { get; private set; }
-        public string FileSuffix { get; private set; }
-        public string EnumSuffix { get; private set; }
-        public string SaveDbPath
-        {
-            get
-            {
-                if (mSaveDbPath.Contains(":")) //盘符标志
-                    return mSaveDbPath;
-                return WorkBookCore.App.ActiveWorkbook.Path + "\\" + mSaveDbPath;
-            }
-            set { mSaveDbPath = value; }
+            public string GeneratorType { get; set; } 
+            public string ScriptNameSpace { get; set; }
+            public string FileSuffix { get; set; }
+            public string EnumSuffix { get; set; }
+            public string[] SaveDbPath { get; set; }
+            public string[] SaveScriptPath { get; set; } 
         }
 
-        private static string GetValue(string split)
+        public static void WriteScript(string file,string content)
         {
-            return split.Substring(split.IndexOf("=") + 1).Trim();
+            foreach (var node in Info.SaveScriptPath)
+            {
+                if (Path.IsPathRooted(node))
+                {
+                    var path = node + Path.DirectorySeparatorChar + file;
+                    var dir = Path.GetDirectoryName(path);
+                    if (!Directory.Exists(dir))
+                        Directory.CreateDirectory(dir);
+                    File.WriteAllText(path, content);
+                }
+                else
+                {
+                    var path = WorkBookCore.App.ActiveWorkbook.Path + Path.DirectorySeparatorChar + node + Path.DirectorySeparatorChar + file;
+                    var dir = Path.GetDirectoryName(path);
+                    if (!Directory.Exists(dir))
+                        Directory.CreateDirectory(dir);
+                    File.WriteAllText(path, content);
+                }
+            }
+        }
+
+        public static List<string> GetDBPath(string fileName)
+        {
+            List<string> s = new List<string>();
+            foreach (var node in Info.SaveDbPath)
+            {
+                var file = fileName;
+                if (Path.IsPathRooted(node))
+                {
+                    file = node + Path.DirectorySeparatorChar + file;
+                    var dir = Path.GetDirectoryName(file);
+                    if (!Directory.Exists(dir))
+                        Directory.CreateDirectory(dir);
+                }
+                else
+                {
+                    file = WorkBookCore.App.ActiveWorkbook.Path + Path.DirectorySeparatorChar + node + Path.DirectorySeparatorChar + file;
+                    var dir = Path.GetDirectoryName(file);
+                    if (!Directory.Exists(dir))
+                        Directory.CreateDirectory(dir);
+                }
+                s.Add(file);
+            }
+
+            return s;
+        }
+        
+        public static void DeleteDB(string file)
+        {
+            foreach (var node in Info.SaveDbPath)
+            {
+                var path = file;
+                if (Path.IsPathRooted(node))
+                    path = node + Path.DirectorySeparatorChar + path;
+                else
+                    path = WorkBookCore.App.ActiveWorkbook.Path + Path.DirectorySeparatorChar + node + Path.DirectorySeparatorChar + path;
+                try
+                {
+                    if (File.Exists(path))
+                    {
+                        File.Delete(path);
+                    }
+                }
+                catch
+                {
+                    throw new ExcelException("无法写入数据库至" + path + "请检查是否有任何应用正在使用该文件");
+                }
+            }
         }
     }
 }

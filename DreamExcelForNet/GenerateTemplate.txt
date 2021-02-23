@@ -1,0 +1,62 @@
+﻿using System;
+using System.Collections.Generic;
+namespace SuperHero.Config
+{
+	[@CustomClass]
+	{
+		public class {@Class}
+		{
+		    [@NestedField]{private {@Type} m{@Name};}
+			[@NestedProperty]
+			{
+				public {@Type} {@Name}
+				{
+					get{ return m{@Name}; }
+					set{ m{@Name} = value; }
+				}
+			}
+		}
+	}
+
+	[@CoreClass]
+	{
+			[@Enum]
+	{
+		public enum {@Name}
+		{
+		    [@Nested]{{@Key} = {@Value},}
+		}
+	}
+		public class {@Class}Property
+		{
+			private static string Path = "ConfigAssets/{@Class}";
+
+			[@Field]{private {@Type} m{@Name};}
+			[@Property]
+			{
+				/// <summary>
+				/// {@Comment}
+				/// </summary>
+				public {@Type} {@Name}
+				{
+					get{ return m{@Name}; }
+					set{ m{@Name} = value; }
+				}
+			}
+
+			//public static {@Class}Property Read({@KeyType} id)
+			//{
+			//	var config = {@Class}.Instance.Config;
+			//	int count = config.Count;
+			//	for(int i = 0; i < count; i++)
+			//	{
+			//		if(config[i].Id == id)
+			//		{
+			//			return config[i];
+			//		}
+			//	}
+			//	return null;
+			//}
+		}
+	}
+}

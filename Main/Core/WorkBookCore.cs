@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Windows.Forms;
 using ExcelDna.Integration;
@@ -46,22 +47,27 @@ namespace DreamExcel.Core
         public JsonWorkbook JsonWorkbook;
         internal static HashSet<string> SupportType = new HashSet<string>
         {
-            "int","string","bool","long","float","int[]","string[]","long[]","bool[]","float[]","enum",
+            "int", "string", "bool", "long", "float", "int[]", "string[]", "long[]", "bool[]", "float[]", "enum","uint","short","ushort","BigInteger"
         };
 
         internal static Dictionary<string, string> FullTypeSqliteMapping = new Dictionary<string, string>
         {
-            {"int","INTEGER" },
-            {"string","TEXT" },
-            {"float","REAL" },
-            {"bool","INTEGER" },
-            {"long","INTEGER" },
-            {"int[]","TEXT"},
-            {"string[]","TEXT"},
-            {"float[]","TEXT"},
-            {"bool[]","TEXT"},
-            {"long[]","TEXT"},
-            {"enum","INTEGER" }
+            {"int", "INTEGER"},
+            {"string", "TEXT"},
+            {"float", "REAL"},
+            {"bool", "INTEGER"},
+            {"long", "INTEGER"},
+            {"int[]", "TEXT"},
+            {"string[]", "TEXT"},
+            {"float[]", "TEXT"},
+            {"bool[]", "TEXT"},
+            {"long[]", "TEXT"},
+            {"enum", "INTEGER"},
+            {"uint", "INTEGER"},
+            {"short", "INTEGER"},
+            {"ushort", "INTEGER"},
+            {"BigInteger", "TEXT"},
+            
         };
         
         private void Workbook_BeforeSave(Workbook wb,bool b, ref bool r)
@@ -70,20 +76,7 @@ namespace DreamExcel.Core
             var activeSheet = (Worksheet) wb.ActiveSheet;
             if (activeSheet.Name == JsonWorkbook.TableName)
                 return;
-            var fileName = Path.GetFileNameWithoutExtension(wb.Name)?.Replace(Config.Instance.FileSuffix, "");
-            var dbDirPath = Config.Instance.SaveDbPath;
-            var dbFilePath = dbDirPath + fileName;
-            try
-            {
-                if (!Directory.Exists(dbDirPath))
-                {
-                    Directory.CreateDirectory(dbDirPath);
-                }
-            }
-            catch(Exception e)
-            {
-                throw new ExcelException(e.Message);
-            }
+            var fileName = Path.GetFileNameWithoutExtension(wb.Name)?.Replace(Config.Info.FileSuffix, "");
 
             Range usedRange = activeSheet.UsedRange;
             var rowCount = usedRange.Rows.Count;
@@ -151,13 +144,18 @@ namespace DreamExcel.Core
                     }
                     else
                     {
+                        if (t.Type == "BigInteger")
+                        {
+                            t.Type = typeof(BigInteger).FullName;
+                        }
+                        
                         GeneratePropertiesTemplate core = new GeneratePropertiesTemplate {Name = t.Name, Type = t.Type,Remark = ((Range)usedRange[CommentRow, t.Colunm]).Text.ToString()};
                         if (t.Type == "enum")
                         {
                             //不知道为什么无法获取到注释但是加2却可以了
-                            Range x = ((Range) usedRange[TypeRow, i + 2]);
+                            Range x = ((Range) usedRange[TypeRow, t.Colunm]);
                             if (x.Comment != null)
-                                core.Data = ((Range) usedRange[TypeRow, i + 2]).Comment.Text().Replace("\r", "").Split(new[] {"\n"}, StringSplitOptions.RemoveEmptyEntries);
+                                core.Data = ((Range) usedRange[TypeRow, t.Colunm]).Comment.Text().Replace("\r", "").Split(new[] {"\n"}, StringSplitOptions.RemoveEmptyEntries);
                         }
                         coreClass.Add(core);
                         normalTypes.Add(new TypeBuilder.FieldInfo{Name = t.Name,Type = TypeHelper.ConvertStringToType(t.Type)});
@@ -168,34 +166,31 @@ namespace DreamExcel.Core
             }
             catch (Exception e)
             {
-                throw new ExcelException("生成脚本失败\n" +
-                                         "可能使用了不被支持的脚本类型\n" +
-                                         "当前仅支持int,int[],float,float[],bool,bool[],string,string[],long,long[]\n" +
-                                         "或者自定义类的使用方法错误\n" + 
-                                         e);
+                        throw new ExcelException("生成脚本失败\n" +
+                                           "可能使用了不被支持的脚本类型\n" +
+                                           "当前仅支持int,int[],float,float[],bool,bool[],string,string[],long,long[],short,ushort,uint,BigInteger\n" +
+                                           "或者自定义类的使用方法错误\n" +
+                                           e);
             }
-            try
-            {
-                if (File.Exists(dbFilePath))
-                {
-                    File.Delete(dbFilePath);
-                }
-            }
-            catch
-            {
-                throw new ExcelException("无法写入数据库至" + dbFilePath + "请检查是否有任何应用正在使用该文件");
-            }
+
+            Config.DeleteDB(fileName);
 
             try
             {
-                if (Config.Instance.GeneratorType == "DB")
+                if (Config.Info.GeneratorType == "DB")
                 {
-                    WriteDB(dbFilePath, fileName, keyType, table, columnCount, rowCount, passColumns, cells, usedRange);
+                    foreach (var node in Config.GetDBPath(fileName))
+                    {
+                        WriteDB(node, fileName, keyType, table, columnCount, rowCount, passColumns, cells, usedRange);
+                    }
                 }
-                else if (Config.Instance.GeneratorType == "Json")
+                else if (Config.Info.GeneratorType == "Json")
                 {
-                    WriteJson(dbFilePath, fileName, newType,keyIndex, columnCount, rowCount, passColumns, cells,
-                        usedRange);
+                    foreach (var node in Config.GetDBPath(fileName))
+                    {
+                        WriteJson(node, fileName, newType,keyIndex, columnCount, rowCount, passColumns, cells,
+                            usedRange);
+                    }
                 }
             }
             catch (Exception e)
@@ -255,7 +250,13 @@ namespace DreamExcel.Core
                                 if (property.PropertyType.IsValueType)
                                     continue;
                             }
-                            property.SetValue(instance, Convert.ChangeType(cells[j, i], property.PropertyType));
+
+                            if (property.PropertyType == typeof(BigInteger))
+                                property.SetValue(instance, BigInteger.Parse(cells[j, i].ToString()));
+                            else
+                            {
+                                property.SetValue(instance, Convert.ChangeType(cells[j, i], property.PropertyType));
+                            }
                         }
                     }
                     catch (Exception e)

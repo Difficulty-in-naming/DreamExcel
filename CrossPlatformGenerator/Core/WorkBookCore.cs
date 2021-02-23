@@ -1,14 +1,18 @@
-using System;
+/*using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
+using CrossPlatformGenerator;
+using DreamLib.Editor.Unity.Extensition;
+using Hocon;
+using Hocon.Json;
 using Newtonsoft.Json;
-using NPOI.OpenXml4Net.OPC;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
 using NPOI.SS.UserModel;
 using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
-using ScriptGenerate;
-using SQLite4Unity3d;
 
 namespace DreamExcel.Core
 {
@@ -38,355 +42,347 @@ namespace DreamExcel.Core
         ///     注释名称的所在行
         /// </summary>
         public const int CommentRow = 0;
-
-        internal static HashSet<string> SupportType = new HashSet<string>
-        {
-            "int", "string", "bool", "long", "float", "int[]", "string[]", "long[]", "bool[]", "float[]", "enum"
-        };
-
-        internal static Dictionary<string, string> FullTypeSqliteMapping = new Dictionary<string, string>
-        {
-            {"int", "INTEGER"},
-            {"string", "TEXT"},
-            {"float", "REAL"},
-            {"bool", "INTEGER"},
-            {"long", "INTEGER"},
-            {"int[]", "TEXT"},
-            {"string[]", "TEXT"},
-            {"float[]", "TEXT"},
-            {"bool[]", "TEXT"},
-            {"long[]", "TEXT"},
-            {"enum", "INTEGER"}
-        };
-
+        
         public static void AnalyzerExcel(string path)
         {
-            FileStream file = new FileStream(path,FileMode.Open,FileAccess.Read,FileShare.ReadWrite);
+            //var destFile = Config.ExePath + "/" + Path.GetFileNameWithoutExtension(path) + "Temp";
+            //Console.WriteLine($"Copy源文件{path} To {destFile}");
+            //File.Copy(path, destFile, true);
             try
             {
-                
-                IWorkbook wb = new XSSFWorkbook(file);
-                //只有第一张表的内容才会被导出
-                var sheet = wb.GetSheetAt(0);
-                var table = new List<TableStruct>();
-                Type newType = null;
-                var haveKey = false;
-                var keyType = "";
-                var keyIndex = -1;
-                var passColumns = new List<int>(); //跳过列
-                var fileName = Path.GetFileName(path);
-                var dbDirPath = Config.Instance.SaveDbPath;
-                var dbFilePath = dbDirPath + fileName;
-                var rowCount = sheet.LastRowNum;
-                var columnCount = 0;
-                for (var i = 0; i < sheet.LastRowNum; i++)
-                {
-                    var row = sheet.GetRow(i);
-                    if (row == null)
-                        continue;
-                    var cells = row.Cells;
-                    if (cells.Count == 0)
-                        continue;
-                    columnCount = Math.Max(columnCount, cells.Count);
-                    try
-                    {
-                        if (!Directory.Exists(dbDirPath)) Directory.CreateDirectory(dbDirPath);
-                    }
-                    catch (Exception e)
-                    {
-                        new ExcelException(e.Message);
-                    }
-                }
-
-                for (var index = 0; index < columnCount; index++)
-                {
-                    //从1开始,第0行是策划用来写备注的地方第1行为程序使用的变量名,第2行为变量类型
-                    var t1 = Convert.ToString(sheet.GetRow(NameRow).GetCell(index));
-                    if (string.IsNullOrWhiteSpace(t1)) new ExcelException($"{path}表格发生错误！！！\n  单元格:{NameRow},{index} 名称不能为空");
-
-                    if (t1.StartsWith("*"))
-                    {
-                        passColumns.Add(index);
-                        continue;
-                    }
-
-                    var type = sheet.GetRow(TypeRow).GetCell(index).ToString();
-                    if (t1 == Key)
-                    {
-                        haveKey = true;
-                        keyType = type;
-                        if (keyType != "int" && keyType != "string") new ExcelException($"{path}表格发生错误！！！\n  表ID的类型不支持,可使用的类型必须为 int,string");
-
-                        keyIndex = index;
-                    }
-
-                    table.Add(new TableStruct(t1, type, index));
-                }
-
-                if (!haveKey) new ExcelException($"{path}表格发生错误！！！\n  表格中不存在关键Key,你需要新增一列变量名为" + Key + "的变量作为键值");
-
+                using var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                 try
                 {
-                    var NormalTypes = new List<TypeBuilder.FieldInfo>();
-                    //生成C#脚本
-                    var customClass = new List<GenerateConfigTemplate>();
-                    var coreClass = new GenerateConfigTemplate
+                    IWorkbook wb = new XSSFWorkbook(stream);
+                    //只有第一张表的内容才会被导出
+                    var sheet = wb.GetSheetAt(wb.ActiveSheetIndex);
+                    if (sheet.SheetName.StartsWith("&"))
+                        return;
+                    var table = new List<TableStruct>();
+                    Type newType = null;
+                    var scriptTemplate = new ScriptTemplate();
+                    var haveKey = false;
+                    var keyType = "";
+                    var keyIndex = -1;
+                    var passColumns = new List<int>(); //跳过列
+                    var fileName = Path.GetFileNameWithoutExtension(path)?.Replace(Config.Info.FileSuffix, "");
+                    fileName = sheet.SheetName;
+                    var rowCount = sheet.LastRowNum;
+                    var columnCount = 0;
+                    for (var i = 0; i <= rowCount; i++)
                     {
-                        Class = new GenerateClassTemplate {Name = fileName, Type = keyType}
-                    };
-                    for (var i = 0; i < table.Count; i++)
+                        var row = sheet.GetRow(i);
+                        if (row == null)
+                            continue;
+                        var cells = row.Cells;
+                        if (cells.Count == 0)
+                            continue;
+                        columnCount = Math.Max(columnCount, cells.Count);
+                    }
+
+                    try
                     {
-                        var t = table[i];
-                        if (!SupportType.Contains(t.Type))
+                        for (var index = 0; index < columnCount; index++)
                         {
-                            var isArray = t.Type.StartsWith("{");
-                            var tuple = TableAnalyzer.GenerateCustomClass(t.Type, t.Name);
-                            var newCustomType = tuple.Item1;
-                            coreClass.Add(new GeneratePropertiesTemplate
+                            //从1开始,第0行是策划用来写备注的地方第1行为程序使用的变量名,第2行为变量类型
+                            var cell = sheet.GetRow(NameRow).GetCell(index);
+                            var t1 = Convert.ToString(cell);
+
+                            if (string.IsNullOrWhiteSpace(t1)) throw new ExcelException($"{path}表格发生错误！！！\n  单元格:{new CellReference(NameRow, index).FormatAsString()} 不能为空,如果这一列没有东西.那么就选中这一列然后删除");
+
+                            if (t1.StartsWith("*"))
                             {
-                                Name = t.Name,
-                                Type = newCustomType.Class.Name + (isArray ? "[]" : ""),
-                                Remark = sheet.GetRow(CommentRow)?.GetCell(t.Colunm)?.ToString()
-                            });
-                            customClass.Add(newCustomType);
-                            if (!isArray)
-                                NormalTypes.Add(new TypeBuilder.FieldInfo
+                                passColumns.Add(index);
+                                continue;
+                            }
+
+                            var type = sheet.GetRow(TypeRow).GetCell(index).ToString();
+                            if (t1 == Key)
+                            {
+                                haveKey = true;
+                                keyType = type;
+                                if (keyType != "int" && keyType != "string") throw new ExcelException($"{path}表格发生错误！！！\n  表ID的类型不支持,可使用的类型必须为 int,string");
+
+                                keyIndex = index;
+                            }
+
+                            var comment = sheet.GetRow(CommentRow).GetCell(index).ToString();
+
+                            table.Add(new TableStruct(t1, type, comment, index));
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        return;
+                    }
+
+
+                    if (!haveKey) throw new ExcelException($"{path}表格发生错误！！！\n  表格中不存在关键Key,你需要新增一列变量名为" + Key + "的变量作为键值(注意区分大小写！！)");
+
+                    try
+                    {
+                        //生成C#脚本
+                        for (var i = 0; i < table.Count; i++)
+                        {
+                            var t = table[i];
+                            var customClass = t.Type.Split(";", StringSplitOptions.RemoveEmptyEntries);
+                            if (customClass.Length > 1) //发现这个类型是自定义类型
+                            {
+                                bool isArray = t.Type.StartsWith("{");
+                                scriptTemplate.CoreClass.Variables.Add(new ScriptTemplate.VariableDefine(t.Name + "Data" + (isArray ? "[]" : ""), t.Name, t.Comment));
+                                var define = new ScriptTemplate.ClassDefine();
+                                foreach (var node in customClass)
                                 {
-                                    Name = t.Name,
-                                    Type = TypeBuilder.CompileResultType(tuple.Item2,
-                                                                         "internal_WorkBookCore_Generate_" + t.Name)
-                                });
+                                    var str = node.TrimStart('{').TrimEnd('}');
+                                    var startIndex = str.IndexOf("[");
+                                    var endIndex = str.LastIndexOf("]");
+                                    var name = str.Substring(0, startIndex);
+                                    var type = str.Substring(startIndex + 1, endIndex - startIndex - 1);
+                                    define.Variables.Add(new ScriptTemplate.VariableDefine(type, name, null));
+                                }
+
+                                define.Name = t.Name + "Data";
+                                scriptTemplate.CustomClass.Add(define);
+                            }
                             else
-                                NormalTypes.Add(new TypeBuilder.FieldInfo
+                            {
+                                if (t.Type == "enum")
                                 {
-                                    Name = t.Name,
-                                    Type = TypeBuilder.CompileResultType(tuple.Item2,
-                                                                         "internal_WorkBookCore_Generate_" + t.Name).MakeArrayType()
-                                });
+                                    var x = sheet.GetRow(TypeRow).GetCell(t.Colunm).CellComment;
+                                    if (x != null)
+                                    {
+                                        var define = new ScriptTemplate.EnumDefine(t.Name + "Enum");
+                                        var e = x.String.String.Replace("\r", "").Split(new[] {"\n"}, StringSplitOptions.RemoveEmptyEntries);
+                                        foreach (var node in e)
+                                        {
+                                            var maohaoIndex = node.IndexOf(":");
+                                            var nameStartIndex = node.LastIndexOf('[') + 1;
+                                            var name = node.Substring(nameStartIndex, node.LastIndexOf(']') - nameStartIndex);
+                                            if (maohaoIndex > 0)
+                                            {
+                                                string value = node.Substring(0, maohaoIndex);
+                                                define.Values.Add(new ScriptTemplate.EnumValue(name, int.Parse(value)));
+                                            }
+                                            else
+                                                define.Values.Add(new ScriptTemplate.EnumValue(name));
+                                        }
+
+                                        scriptTemplate.CoreClass.Enum.Add(define);
+                                    }
+
+                                    scriptTemplate.CoreClass.Variables.Add(new ScriptTemplate.VariableDefine(t.Name + "Enum", t.Name, t.Comment));
+                                }
+                                else
+                                    scriptTemplate.CoreClass.Variables.Add(new ScriptTemplate.VariableDefine(t.Type, t.Name, t.Comment));
+                            }
+                        }
+
+                        scriptTemplate.CoreClass.KeyType = keyType;
+                        scriptTemplate.CoreClass.Name = fileName;
+                        Generate generate;
+                        if (File.Exists(Config.ExePath + Path.DirectorySeparatorChar + fileName + ".txt"))
+                        {
+                            generate = new Generate(Config.ExePath + Path.DirectorySeparatorChar + fileName + ".txt");
                         }
                         else
                         {
-                            var core = new GeneratePropertiesTemplate {Name = t.Name, Type = t.Type, Remark = sheet.GetRow(CommentRow)?.GetCell(t.Colunm)?.ToString()};
-                            if (t.Type == "enum")
+                            generate = new Generate(Config.ExePath + Path.DirectorySeparatorChar + "GenerateTemplate.txt");
+                        }
+
+                        foreach (var node in scriptTemplate.CustomClass)
+                        {
+                            var customClass = generate.Tree.GetChild("CustomClass");
+                            customClass.GetChild("Class").Replace(node.Name);
+                            foreach (var variable in node.Variables)
                             {
-                                var x = sheet.GetRow(TypeRow).GetCell(i + 1).CellComment;
-                                if (x != null)
-                                    core.Data = sheet.GetRow(TypeRow).GetCell(i + 1).CellComment.String.String
-                                        .Replace("\r", "").Split(new[] {"\n"},
-                                                                 StringSplitOptions.RemoveEmptyEntries);
+                                var field = customClass.GetChild("Field").Clone();
+                                field.GetChild("Name").Replace(variable.Name);
+                                field.GetChild("Type").Replace(variable.Type);
+                                customClass.Add("Field", field);
+
+                                var property = customClass.GetChild("Property").Clone();
+                                property.GetChild("Name").Replace(variable.Name);
+                                property.GetChild("Type").Replace(variable.Type);
+                                customClass.Add("Property", property);
                             }
 
-                            coreClass.Add(core);
-                            NormalTypes.Add(new TypeBuilder.FieldInfo
-                            {
-                                Name = t.Name,
-                                Type = TypeHelper.ConvertStringToType(t.Type)
-                            });
+                            generate.Tree.Add("CustomClass", customClass);
                         }
+
+                        var coreClass = generate.Tree.GetChild("CoreClass");
+                        coreClass.GetChild("Class").Replace(scriptTemplate.CoreClass.Name);
+                        coreClass.GetChild("KeyType").Replace(scriptTemplate.CoreClass.KeyType);
+                        for (int i = 0; i < scriptTemplate.CoreClass.Variables.Count; i++)
+                        {
+                            var variable = scriptTemplate.CoreClass.Variables[i];
+                            var field = coreClass.GetChild("Field").Clone();
+                            field.GetChild("Type").Replace(variable.Type);
+                            field.GetChild("Name").Replace(variable.Name);
+                            coreClass.Add("Field", field);
+                            var property = coreClass.GetChild("Property").Clone();
+                            property.GetChild("Comment").Replace(variable.Comment);
+                            property.GetChild("Type").Replace(variable.Type);
+                            property.GetChild("Name").Replace(variable.Name);
+                            coreClass.Add("Property", property);
+                        }
+
+                        for (int i = 0; i < scriptTemplate.CoreClass.Enum.Count; i++)
+                        {
+                            var enumList = scriptTemplate.CoreClass.Enum[i];
+                            var classEnum = coreClass.GetChild("Enum").Clone();
+                            classEnum.GetChild("Name").Replace(enumList.Name);
+                            foreach (var node in enumList.Values)
+                            {
+                                var enumNested = classEnum.GetChild("Nested").Clone();
+                                enumNested.GetChild("Key").Replace(node.Name);
+                                if (node.Value.HasValue)
+                                    enumNested.GetChild("Value").Replace(" = " + node.Value);
+                                classEnum.Add("Nested", enumNested);
+                            }
+
+                            coreClass.Add("Enum", classEnum);
+                        }
+
+                        generate.Tree.Add("CoreClass", coreClass);
+                        Config.WriteScript(fileName + ".cs", generate.ToString());
+                    }
+                    catch (Exception e)
+                    {
+                        throw new ExcelException(e.ToString());
                     }
 
-                    newType = TypeBuilder.CompileResultType(NormalTypes, "NewType");
-                    CodeGenerate.Start(customClass, coreClass, fileName);
-                }
-                catch (Exception e)
-                {
-                    new ExcelException("生成脚本失败\n" +
-                                             "可能使用了不被支持的脚本类型\n" +
-                                             "当前仅支持int,int[],float,float[],bool,bool[],string,string[],long,long[]\n" +
-                                             "或者自定义类的使用方法错误\n" +
-                                             e);
-                }
-
-                try
-                {
-                    if (File.Exists(dbFilePath)) File.Delete(dbFilePath);
-                }
-                catch
-                {
-                    new ExcelException("无法写入数据库至" + dbFilePath + "请检查是否有任何应用正在使用该文件");
-                }
-
-                try
-                {
-                    if (Config.Instance.GeneratorType == "DB")
-                        WriteDB(dbFilePath, fileName, keyType, table, columnCount, rowCount, passColumns, sheet);
-                    else if (Config.Instance.GeneratorType == "Json")
-                        WriteJson(dbFilePath, fileName, newType, keyIndex, columnCount, rowCount, passColumns,
-                                  sheet);
-                }
-                catch (Exception e)
-                {
-                    new ExcelException("写入数据库失败\n" + e);
-                }
-            }
-            catch (Exception e)
-            {
-                new ExcelException(path + " :不能被导出" + "\n" + e.Message);
-            }
-        }
-
-
-        private static void WriteJson(string dbFilePath, string fileName, Type instanceType, int keyIndex,
-            int columnCount,
-            int rowCount, List<int> passColumns, ISheet sheet)
-        {
-            var item = new Dictionary<object, object>();
-            for (var j = StartLine; j < rowCount; j++)
-            {
-                var instance = Activator.CreateInstance(instanceType);
-
-                var keyCell = sheet.GetRow(j)?.GetCell(keyIndex);
-                //验证数据有效性
-                if (keyCell == null)
-                    continue;
-
-                for (var i = 0; i < columnCount; i++)
+                    Config.DeleteDB(fileName);
                     try
                     {
-                        if (passColumns.Contains(i))
-                            continue;
-                        /*if (cells[j, i] == null)
-                            continue;*/
-                        var type = sheet.GetRow(NameRow).GetCell(i).ToString();
-                        var property = instanceType.GetProperty(type);
-                        var valueRow = sheet.GetRow(j);
-                        var valueCell = valueRow?.GetCell(i);
-                        if (valueCell == null)
-                            continue;
-                        var value = valueCell.ToString();
-                        //表示内部生成的自定义类
-                        if (property.PropertyType.Name.StartsWith("internal_WorkBookCore_Generate_"))
+                        if (Config.Info.GeneratorType == "Json")
                         {
-                            property.SetValue(instance, JsonConvert.DeserializeObject(value, property.PropertyType));
-                        }
-                        else if (property.PropertyType.IsArray)
-                        {
-                            var array = value.Split(new[] {","}, StringSplitOptions.RemoveEmptyEntries);
-                            var t2 = Array.CreateInstance(property.PropertyType.GetElementType(), array.Length);
-                            for (var index = 0; index < array.Length; index++)
+                            if (Config.GetDBPath(fileName).Count == 0)
                             {
-                                var node = array[index];
-                                t2.SetValue(Convert.ChangeType(node, property.PropertyType.GetElementType()), index);
+                                WriteJson(Config.ExePath + "/" + fileName, newType, keyIndex, columnCount, rowCount, passColumns,
+                                    sheet);
                             }
-
-                            property.SetValue(instance, t2);
-                        }
-                        else
-                        {
-                            if (string.IsNullOrEmpty(value))
-                                if (property.PropertyType.IsValueType)
-                                    continue;
-                            property.SetValue(instance, Convert.ChangeType(sheet.GetRow(j).GetCell(i).ToString(), property.PropertyType));
+                            else
+                            {
+                                foreach (var node in Config.GetDBPath(fileName))
+                                {
+                                    WriteJson(node, newType, keyIndex, columnCount, rowCount, passColumns,
+                                        sheet);
+                                }
+                            }
                         }
                     }
                     catch (Exception e)
                     {
-                        new ExcelException($"单元格: {new CellReference(sheet.GetRow(j).GetCell(i)).ToString().Replace("CellReference", "")} 存在异常\n\n\n" + e);
+                        throw new ExcelException("写入数据库失败\n" + e);
                     }
-
-                item[sheet.GetRow(j).GetCell(keyIndex).ToString()] = instance;
-            }
-
-            var json = JsonConvert.SerializeObject(item);
-            File.WriteAllText(dbFilePath + ".json", json);
-        }
-
-        private static void WriteDB(string dbFilePath, string fileName, string keyType, List<TableStruct> table, int columnCount,
-            int rowCount, List<int> passColumns, ISheet sheet)
-        {
-            using (var conn = new SQLiteConnection(dbFilePath + ".db", SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite))
-            {
-                try
-                {
-                    var sb = new StringBuilder();
-                    var tableName = fileName;
-                    var sql = new SQLiteCommand(conn);
-                    sql.CommandText = "PRAGMA synchronous = OFF";
-                    sql.ExecuteNonQuery();
-                    //创建关键Key写入表头
-                    sb.Append("create table if not exists " + tableName + " (" + Key + " " + FullTypeSqliteMapping[keyType] +
-                              " PRIMARY KEY not null, ");
-                    for (var n = 0; n < table.Count; n++)
-                    {
-                        if (table[n].Name == Key)
-                            continue;
-                        var t = FullTypeSqliteMapping.ContainsKey(table[n].Type);
-                        var sqliteType = t ? FullTypeSqliteMapping[table[n].Type] : "TEXT";
-                        sb.Append(table[n].Name + " " + sqliteType + ",");
-                    }
-
-                    sb.Remove(sb.Length - 1, 1);
-                    sb.Append(")");
-                    sql.CommandText = sb.ToString();
-                    sql.ExecuteNonQuery();
-                    //准备写入表内容
-                    sb.Clear();
-                    conn.BeginTransaction();
-                    var writeInfo = new object[columnCount];
-                    for (var i = StartLine; i <= rowCount; i++)
-                    {
-                        var offset = 1;
-                        for (var n = 1; n <= columnCount; n++)
-                            try
-                            {
-                                if (passColumns.Contains(n))
-                                {
-                                    offset++;
-                                    continue;
-                                }
-
-                                var property = table[n - offset];
-                                var cell = Convert.ToString(sheet.GetRow(i).GetCell(n));
-                                if (table.Count > n - offset)
-                                {
-                                    string sqliteType;
-                                    if (FullTypeSqliteMapping.TryGetValue(property.Type, out sqliteType)) //常规类型可以使用这种方法直接转换
-                                    {
-                                        var attr = TableAnalyzer.SplitData(cell);
-                                        if (property.Type == "bool")
-                                            writeInfo[n - offset] = attr[0].ToUpper() == "TRUE" ? 1 : 0;
-                                        else if (sqliteType != "TEXT")
-                                            writeInfo[n - offset] = attr[0];
-                                        else
-                                            writeInfo[n - offset] = cell;
-                                    }
-                                    else
-                                    {
-                                        //自定义类型序列化
-                                        writeInfo[n - 1] = cell;
-                                    }
-                                }
-                            }
-                            catch
-                            {
-                                new ExcelException("单元格:" + new CellReference(sheet.GetRow(i).GetCell(n)).ToString().Replace("CellReference", "") + "存在异常");
-                            }
-
-                        sb.Append("replace into " + fileName + " ");
-                        sb.Append("(");
-                        foreach (var node in table) sb.Append(node.Name + ",");
-
-                        sb.Remove(sb.Length - 1, 1);
-                        sb.Append(") values (");
-                        for (var index = 0; index < table.Count; index++) sb.Append("?,");
-
-                        sb.Remove(sb.Length - 1, 1);
-                        sb.Append(")");
-                        conn.CreateCommand(sb.ToString(), writeInfo).ExecuteNonQuery();
-                        sb.Clear();
-                    }
-
-                    conn.Commit();
                 }
                 catch (Exception e)
                 {
-                    new ExcelException(e.ToString());
-                }
-                finally
-                {
-                    conn.Close();
+                    throw new ExcelException(path + " :不能被导出" + "\n" + e.Message);
                 }
             }
+            finally
+            {
+                //File.Delete(destFile);
+            }
+
+            //Console.WriteLine($"导出Excel成功");
+        }
+
+        private static void WriteJson(string dbFilePath, Type instanceType, int keyIndex, int columnCount, int rowCount, List<int> passColumns, ISheet sheet)
+        {
+            JsonSerializerSettings currentSettings = JsonConvert.DefaultSettings?.Invoke() ?? new JsonSerializerSettings();
+            currentSettings.Converters.Add(new StringEnumConverter());
+            JsonConvert.DefaultSettings = () => currentSettings;
+            //var item = new Dictionary<object, object>();
+            var jObject = new JObject();
+            for (var j = StartLine; j <= rowCount; j++)
+            {
+                JObject jValue = new JObject();
+                var valueRow = sheet.GetRow(j);
+                if (valueRow == null)
+                    continue;
+                var key = valueRow.GetCell(keyIndex);
+                if (key == null)
+                    continue;
+                for (var i = 0; i < columnCount; i++)
+                {
+                    try
+                    {
+                        var name = sheet.GetRow(NameRow).GetCell(i).ToString();
+                        var type = sheet.GetRow(TypeRow).GetCell(i).ToString();
+                        if (name.StartsWith("*"))
+                            continue;
+                        var valueCell = valueRow.GetCell(i);
+                        if (valueCell != null && !string.IsNullOrEmpty(valueCell.ToString()))
+                        {
+                            if (type == "int" || type == "long" || type == "short" || type == "uint" || type == "ushort" || type == "byte")
+                                jValue.Add(name, long.Parse(valueCell.ToString()));
+                            else if (type == "bool")
+                                jValue.Add(name, BoolParse(valueCell.ToString()));
+                            else if (type == "bool[]")
+                                jValue.Add(name, new JArray(valueCell.ToString().Split(',', StringSplitOptions.RemoveEmptyEntries).Select(BoolParse).ToArray()));
+                            else if (type == "ulong")
+                                jValue.Add(name, ulong.Parse(valueCell.ToString()));
+                            else if (type == "float" || type == "double")
+                                jValue.Add(name, valueCell.NumericCellValue);
+                            else if (type == "string")
+                                jValue.Add(name, valueCell.ToString());
+                            else if (type == "int[]" || type == "long[]" || type == "short[]" || type == "uint[]" || type == "ushort[]" || type == "byte[]")
+                                jValue.Add(name, new JArray(valueCell.ToString().Split(',', StringSplitOptions.RemoveEmptyEntries).Select(long.Parse).ToArray()));
+                            else if (type == "ulong[]")
+                                jValue.Add(name, new JArray(valueCell.ToString().Split(',', StringSplitOptions.RemoveEmptyEntries).Select(ulong.Parse).ToArray()));
+                            else if (type == "float[]" || type == "double[]")
+                                jValue.Add(name, new JArray(valueCell.ToString().Split(',', StringSplitOptions.RemoveEmptyEntries).Select(double.Parse).ToArray()));
+                            else if (type.Contains("string[]"))
+                                jValue.Add(name, new JArray(valueCell.ToString().Split(',', StringSplitOptions.RemoveEmptyEntries)));
+                            else
+                            {
+                                try
+                                {
+                                    var value = valueCell.ToString();
+                                    var parse = HoconParser.Parse(value);
+                                    var token = parse.ToJToken();
+                                    jValue.Add(name, token);
+                                }
+                                catch
+                                {
+                                    jValue.Add(name, valueCell.ToString());
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        var cell = new CellReference(j, i);
+                        throw new ExcelException($"单元格:{cell.FormatAsString()} 格式错误");
+                    }
+                }
+
+                jObject.Add(key.ToString(), jValue);
+            }
+
+            File.WriteAllText(dbFilePath + ".json", jObject.ToString());
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("导出Json文件| " + new DirectoryInfo(dbFilePath).FullName + ".json");
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+
+        public static bool BoolParse(string value)
+        {
+            if (value.Equals("true", StringComparison.OrdinalIgnoreCase))
+                return true;
+            else if (value.Equals("false", StringComparison.OrdinalIgnoreCase))
+                return false;
+            else if (int.TryParse(value, out int i))
+            {
+                if (i > 0)
+                    return true;
+                else
+                    return false;
+            }
+
+            return false;
         }
     }
-}
+}*/

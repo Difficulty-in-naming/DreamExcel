@@ -1,15 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26430.13
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29230.47
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DreamExcel", "Main\DreamExcel.csproj", "{84E99079-C450-4C56-A3FE-3880A52067BD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScriptGenerate", "..\ScriptGenerate\ScriptGenerate\ScriptGenerate.csproj", "{3F45D91B-6162-4431-B0DA-7F3645EBAE07}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CrossPlatformGenerator", "CrossPlatformGenerator\CrossPlatformGenerator.csproj", "{18664835-4ACD-4CB3-8A43-CC83A9386195}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrossPlatformGenerator", "CrossPlatformGenerator\CrossPlatformGenerator.csproj", "{18664835-4ACD-4CB3-8A43-CC83A9386195}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScriptGenerateNetCore", "..\ScriptGenerator\ScriptGenerateNetCore\ScriptGenerateNetCore.csproj", "{9BF1ECC9-E7D5-4B8F-9BAA-E29134D0D6DF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScriptGenerateNetCore", "..\ScriptGenerate\ScriptGenerateNetCore\ScriptGenerateNetCore.csproj", "{A2E024D8-8332-4121-836A-4E7576DA32B4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScriptGenerate", "..\ScriptGenerator\ScriptGenerate\ScriptGenerate.csproj", "{3F45D91B-6162-4431-B0DA-7F3645EBAE07}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,20 +21,23 @@ Global
 		{84E99079-C450-4C56-A3FE-3880A52067BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{84E99079-C450-4C56-A3FE-3880A52067BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{84E99079-C450-4C56-A3FE-3880A52067BD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3F45D91B-6162-4431-B0DA-7F3645EBAE07}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3F45D91B-6162-4431-B0DA-7F3645EBAE07}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3F45D91B-6162-4431-B0DA-7F3645EBAE07}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3F45D91B-6162-4431-B0DA-7F3645EBAE07}.Release|Any CPU.Build.0 = Release|Any CPU
 		{18664835-4ACD-4CB3-8A43-CC83A9386195}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{18664835-4ACD-4CB3-8A43-CC83A9386195}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{18664835-4ACD-4CB3-8A43-CC83A9386195}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{18664835-4ACD-4CB3-8A43-CC83A9386195}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A2E024D8-8332-4121-836A-4E7576DA32B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A2E024D8-8332-4121-836A-4E7576DA32B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A2E024D8-8332-4121-836A-4E7576DA32B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A2E024D8-8332-4121-836A-4E7576DA32B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9BF1ECC9-E7D5-4B8F-9BAA-E29134D0D6DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9BF1ECC9-E7D5-4B8F-9BAA-E29134D0D6DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9BF1ECC9-E7D5-4B8F-9BAA-E29134D0D6DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9BF1ECC9-E7D5-4B8F-9BAA-E29134D0D6DF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3F45D91B-6162-4431-B0DA-7F3645EBAE07}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F45D91B-6162-4431-B0DA-7F3645EBAE07}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F45D91B-6162-4431-B0DA-7F3645EBAE07}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F45D91B-6162-4431-B0DA-7F3645EBAE07}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {69796466-CE16-4D7D-AA45-75C1A885DBCF}
 	EndGlobalSection
 EndGlobal

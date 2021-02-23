@@ -15,7 +15,7 @@ namespace DreamExcel.Core
         /// </summary>
         public static bool IsVaildWorkBook(this Workbook wb)
         {
-            var isSpWorkBook = Path.GetFileNameWithoutExtension(wb.Name).EndsWith(Config.Instance.FileSuffix);
+            var isSpWorkBook = Path.GetFileNameWithoutExtension(wb.Name).EndsWith(Config.Info.FileSuffix);
             if (!isSpWorkBook)
                 return true;
             return false;

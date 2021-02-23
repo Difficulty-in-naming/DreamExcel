@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Numerics;
 using System.Text;
 using ScriptGenerate;
 
 namespace DreamExcel.Core
 {
-    public static class TypeHelper
+    public static class ConvertStringToBinary
     {
         internal static Dictionary<string, Func<string[], object>> ValueConverter = new Dictionary<string, Func<string[], object>>
         {
@@ -21,69 +20,6 @@ namespace DreamExcel.Core
             {"System.String[]", str => str.Length > 0 ? str : new string[0]},
             {"System.Single[]", str => str.Length > 0 ? Array.ConvertAll(str, float.Parse) : new float[0]}
         };
-
-        public static string ConvertTypeToString(Type type)
-        {
-            if (type == typeof(int))
-                return "int";
-            else if (type == typeof(float))
-                return "float";
-            else if (type == typeof(string))
-                return "string";
-            else if (type == typeof(bool))
-                return "bool";
-            else if (type == typeof(long))
-                return "long";
-            else if (type == typeof(int[]))
-                return "int[]";
-            else if (type == typeof(float[]))
-                return "float[]";
-            else if (type == typeof(string[]))
-                return "string[]";
-            else if (type == typeof(bool[]))
-                return "bool[]";
-            else if (type == typeof(long[]))
-                return "long[]";
-            return null;
-        }
-        
-        public static Type ConvertStringToType(string type)
-        {
-            type = type.ToLower();
-            if (type == "int" || type == "system.int" || type == "system.int32")
-                return typeof(int);
-            else if (type == "float" || type == "system.single" || type == "system.float")
-                return typeof(float);
-            else if (type == "string" || type == "system.string")
-                return typeof(string);
-            else if (type == "bool" || type == "boolean" || type == "system.bool" || type == "system.boolean")
-                return typeof(bool);
-            else if (type == "long" || type == "system.long" || type == "system.int64")
-                return typeof(long);
-            else if (type == "int[]" || type == "system.int[]")
-                return typeof(int[]);
-            else if (type == "float[]" || type == "system.single[]" || type == "system.float[]")
-                return typeof(float[]);
-            else if (type == "string[]" || type == "system.string[]")
-                return typeof(string[]);
-            else if (type == "bool[]" || type == "boolean[]" || type == "system.bool[]" || type == "system.boolean[]")
-                return typeof(bool[]);
-            else if (type == "long[]" || type == "system.long[]")
-                return typeof(long[]);
-            else if (type == "enum" || type == "system.enum")
-                return typeof(int);
-            else if (type == "enum[]" || type == "system.enum[]")
-                return typeof(int[]);
-            else if (type == "short")
-                return typeof(short);
-            else if (type == "ushort")
-                return typeof(ushort);
-            else if (type == "uint")
-                return typeof(uint);
-            else if (type == "biginteger" || type == "system.numerics.biginteger")
-                return typeof(BigInteger);
-            return null;
-        } 
 
         public static void Convert(string context, GenerateConfigTemplate template)
         {
