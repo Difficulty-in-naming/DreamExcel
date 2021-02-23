@@ -1,5 +1,7 @@
 # Excel2Sqlite
 
+文档待更新
+
 在Excel中生成出数据库文件和脚本文件,工作人员只需要像平常一样操作Excel,不需要点击任何按钮.
 
 Features
