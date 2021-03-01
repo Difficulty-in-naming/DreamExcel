@@ -8,10 +8,13 @@
     <ItemGroup>
       <PackageReference Include="Hocon" Version="2.0.3" />
       <PackageReference Include="Hocon.Json" Version="2.1.2" />
-      <PackageReference Include="Mono.TextTemplating" Version="2.2.0" />
+      <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.8.0" />
+      <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.8.0" />
+      <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="3.8.0" />
       <PackageReference Include="Nett" Version="0.15.0" />
       <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
       <PackageReference Include="NPOI" Version="2.5.2" />
+      <PackageReference Include="ScriptGenerateNetCore" Version="1.0.1" />
     </ItemGroup>
 
     <ItemGroup>
@@ -27,10 +30,9 @@
       <None Update="GenerateTemplate.txt">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\..\ScriptGenerator\ScriptGenerateNetCore\ScriptGenerateNetCore.csproj" />
+      <None Update="Config.txt">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

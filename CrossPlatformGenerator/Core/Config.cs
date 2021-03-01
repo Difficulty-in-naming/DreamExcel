@@ -4,6 +4,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Formatting;
 using Nett;
 
 namespace DreamExcel.Core
@@ -27,6 +31,14 @@ namespace DreamExcel.Core
             }
         }
 
+        public static string[] CSVDelimiters
+        {
+            get
+            {
+                return Info.CSVDelimiters;
+            }
+        }
+        
         private static string CurrentPath => AppDomain.CurrentDomain.BaseDirectory;
 
         public static string ScriptTemplatePath
@@ -48,6 +60,7 @@ namespace DreamExcel.Core
             public string EnumSuffix { get; set; }
             public string[] SaveDbPath { get; set; }
             public string[] SaveScriptPath { get; set; }
+            public string[] CSVDelimiters { get; set; }
         }
 
         public static void WriteScript(string file, string content)
@@ -62,7 +75,7 @@ namespace DreamExcel.Core
                         var dir = Path.GetDirectoryName(path);
                         if (!Directory.Exists(dir))
                             Directory.CreateDirectory(dir);
-                        File.WriteAllText(path, content);
+                        File.WriteAllText(path, FormatCode(content));
                         Console.ForegroundColor = ConsoleColor.Green;
                         Console.WriteLine("导出脚本文件| " + new FileInfo(path).FullName);
                         Console.ForegroundColor = ConsoleColor.White;
@@ -73,7 +86,7 @@ namespace DreamExcel.Core
                         var dir = Path.GetDirectoryName(path);
                         if (!Directory.Exists(dir))
                             Directory.CreateDirectory(dir);
-                        File.WriteAllText(path, content);
+                        File.WriteAllText(path, FormatCode(content));
                         Console.ForegroundColor = ConsoleColor.Green;
                         Console.WriteLine("导出脚本文件| " + new FileInfo(path).FullName);
                         Console.ForegroundColor = ConsoleColor.White;
@@ -86,7 +99,20 @@ namespace DreamExcel.Core
                 Console.WriteLine("导出脚本失败");
                 Console.ForegroundColor = ConsoleColor.White;
             }
+        }
 
+        private static string FormatCode(string source)
+        {
+            SyntaxTree tree = CSharpSyntaxTree.ParseText(source);
+            var workSpace = new AdhocWorkspace();
+            workSpace.AddSolution(
+                SolutionInfo.Create(SolutionId.CreateNewId("formatter"), 
+                    VersionStamp.Default)
+            );
+
+            var formatter = Formatter.Format(tree.GetCompilationUnitRoot(), workSpace);
+            return tree.GetCompilationUnitRoot().NormalizeWhitespace().ToFullString();
+            //return temp.ToFullString();
         }
 
         public static List<string> GetDBPath(string fileName)

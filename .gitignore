@@ -13,7 +13,7 @@ $RECYCLE.BIN/
 *.msi
 *.msm
 *.msp
-.idea/
+
 # Windows shortcuts
 *.lnk
 
@@ -30,7 +30,7 @@ $RECYCLE.BIN/
 
 # Thumbnails
 ._*
-
+.idea
 # Files that might appear in the root of a volume
 .DocumentRevisions-V100
 .fseventsd

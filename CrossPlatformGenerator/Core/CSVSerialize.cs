@@ -65,7 +65,7 @@ namespace DreamExcel.Core
                 using FileStream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                 using (TextFieldParser csvReader = new TextFieldParser(fileStream,new UTF8Encoding(true)))
                 {
-                    csvReader.SetDelimiters(new string[] {","});
+                    csvReader.SetDelimiters(Config.CSVDelimiters);
                     csvReader.HasFieldsEnclosedInQuotes = true;
                     string[] colFields;
                     bool tableCreated = false;
@@ -297,10 +297,15 @@ namespace DreamExcel.Core
                     coreClass.Add("Enum", classEnum);
                 }
 
-                var keyPart = coreClass.GetChild("HasKey").Clone();
-                keyPart.GetChild("Class").Replace(scriptTemplate.CoreClass.Name);
-                keyPart.GetChild("KeyType").Replace(mRecords.GetTypeByName("Key", true));
-                coreClass.Add("HasKey", keyPart);
+                var keyType = mRecords.GetTypeByName("Key", true);
+                if (!string.IsNullOrEmpty(keyType))
+                {
+                    var keyPart = coreClass.GetChild("HasKey").Clone();
+                    keyPart.GetChild("Class").Replace(scriptTemplate.CoreClass.Name);
+                    keyPart.GetChild("KeyType").Replace(keyType);
+                    coreClass.Add("HasKey", keyPart);
+                }
+
                 
                 generate.Tree.Add("CoreClass", coreClass);
                 Config.WriteScript(fileName + ".cs", generate.ToString());

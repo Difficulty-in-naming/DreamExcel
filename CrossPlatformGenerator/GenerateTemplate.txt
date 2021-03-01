@@ -8,34 +8,33 @@ using Config.ConfigCore;
 using UnityEngine;
 using UnityEngine.Networking;
 using System.IO;
-namespace SuperHero.Config
+namespace RestaurantPreview.Config
 {
 [%CustomClass]
 {
 	public partial class [@Class]
 	{
-	    [%NestedField]{private [@Type] m[@Name];}
-		[%NestedProperty]
-		{
-			public [@Type] [@Name]
-			{
-				get{ return m[@Name]; }
-				set{ m[@Name] = value; }
-			}
-		}
+[%Field]{        private [@Type] m[@Name];}
+    [%Property]
+    {
+        public [@Type] [@Name]
+        {
+        	get{ return m[@Name]; }
+        	set{ m[@Name] = value; }
+        }
+    }
 	}
 }
 [%CoreClass]
 {
 	public partial class [@Class]Property : ConfigAssetManager<[@Class]Property>
 	{
-		private static string Path = "DB/[@Class].json";
 		[%Enum]
 		{
-			public enum [@Name]
-			{
-				[%Nested]{ [@Key] = [@Value], }
-			}
+		public enum [@Name]
+		{
+[%Nested]{            [@Key][@Value], }
+		}
 		}
 		
 [%Field]{		private [@Type] m[@Name];}
@@ -46,8 +45,8 @@ namespace SuperHero.Config
 		/// </summary>
 		public [@Type] [@Name]
 		{
-			get{ return m[@Name]; }
-			set{ m[@Name] = value; }
+			get => m[@Name];
+			set => m[@Name] = value;
 		}
 		}
 
@@ -55,6 +54,13 @@ namespace SuperHero.Config
 		{
 			return ConfigAssetManager<[@Class]Property>.Read(id, throwException);
 		}
+[%HasKey]
+{
+		public static [@Class]Property Read([@KeyType] id, bool throwException = true)
+		{
+			return ConfigAssetManager<[@Class]Property>.Read(id, throwException);
+		}
+}
 
 		public static Dictionary<[@KeyType],[@Class]Property> ReadDict()
 		{
@@ -65,6 +71,6 @@ namespace SuperHero.Config
 		{
 			return ConfigAssetManager<[@Class]Property>.ReadList();
 		}
-		}
 	}
+}
 }
