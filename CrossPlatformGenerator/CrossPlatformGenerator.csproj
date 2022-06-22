@@ -12,7 +12,7 @@
       <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.8.0" />
       <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="3.8.0" />
       <PackageReference Include="Nett" Version="0.15.0" />
-      <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
       <PackageReference Include="NPOI" Version="2.5.2" />
       <PackageReference Include="ScriptGenerateNetCore" Version="1.0.1" />
     </ItemGroup>
