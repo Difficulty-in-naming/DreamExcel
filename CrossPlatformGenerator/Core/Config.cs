@@ -1,12 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Formatting;
 using Nett;
 
@@ -14,6 +10,31 @@ namespace DreamExcel.Core
 {
     public class Config
     {
+        /// <summary>
+        ///     第X行开始才是正式数据
+        /// </summary>
+        public const int StartLine = 3;
+
+        /// <summary>
+        ///     关键Key值,这个值在Excel表里面必须存在
+        /// </summary>
+        public const string DataKey = "Id";
+
+        /// <summary>
+        ///     类型的所在行
+        /// </summary>
+        public const int TypeRow = 2;
+
+        /// <summary>
+        ///     注释内容的所在行
+        /// </summary>
+        public const int CommentRow = 0;
+        
+        /// <summary>
+        ///     变量名称的所在行
+        /// </summary>
+        public const int NameRow = 1;
+        
         public static string ExePath
         {
             get;
@@ -58,9 +79,12 @@ namespace DreamExcel.Core
             public string ScriptNameSpace { get; set; }
             public string FileSuffix { get; set; }
             public string EnumSuffix { get; set; }
-            public string[] SaveDbPath { get; set; }
-            public string[] SaveScriptPath { get; set; }
-            public string[] CSVDelimiters { get; set; }
+            public string[] SaveDbPath { get; set; } = Array.Empty<string>();
+            public string[] SaveScriptPath { get; set; } = Array.Empty<string>();
+            public string[] CSVDelimiters { get; set; } = Array.Empty<string>();
+            public string[] ReferenceDlls { get; set; } = Array.Empty<string>();
+            public string CodeSuffix { get; set; }
+            public bool FormatCode { get; set; }
         }
 
         public static void WriteScript(string file, string content)
@@ -101,17 +125,21 @@ namespace DreamExcel.Core
             }
         }
 
-        private static string FormatCode(string source)
+        public static string FormatCode(string source)
         {
-            SyntaxTree tree = CSharpSyntaxTree.ParseText(source);
-            var workSpace = new AdhocWorkspace();
-            workSpace.AddSolution(
-                SolutionInfo.Create(SolutionId.CreateNewId("formatter"), 
-                    VersionStamp.Default)
-            );
+            if (Config.Info.FormatCode)
+            {
+                SyntaxTree tree = CSharpSyntaxTree.ParseText(source);
+                var workSpace = new AdhocWorkspace();
+                workSpace.AddSolution(
+                    SolutionInfo.Create(SolutionId.CreateNewId("formatter"), 
+                        VersionStamp.Default)
+                );
 
-            var formatter = Formatter.Format(tree.GetCompilationUnitRoot(), workSpace);
-            return tree.GetCompilationUnitRoot().NormalizeWhitespace().ToFullString();
+                var formatter = Formatter.Format(tree.GetCompilationUnitRoot(), workSpace);
+                return tree.GetCompilationUnitRoot().NormalizeWhitespace().ToFullString();
+            }
+            return source;
             //return temp.ToFullString();
         }
 

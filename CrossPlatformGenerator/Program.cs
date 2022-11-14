@@ -1,6 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using DreamExcel.Core;
+using Hocon;
+using Microsoft.CodeAnalysis;
+using NPOI.HSSF.Record;
 
 namespace CrossPlatformGenerator
 {
@@ -10,22 +14,14 @@ namespace CrossPlatformGenerator
         {
             if (args.Length == 2)
             {
-                if (args[0] == "Gen")
-                {
-                    Batch.Gen(args[1]);
-                }
-                else if (args[0] == "StartServer")
+                if (args[0] == "StartServer")
                 {
                     Batch.StartServer(args[1]);
                 }
             }
             else
             {
-                if (args[1] == "Gen")
-                {
-                    Batch.Gen(args[2]);
-                }
-                else if (args[1] == "StartServer")
+                if (args[1] == "StartServer")
                 {
                     Batch.StartServer(args[2]);
                 }
@@ -37,39 +33,23 @@ namespace CrossPlatformGenerator
         {
             private static DateTime _lastTimeFileWatcherEventRaised;
             private static FileSystemWatcher _watcher;
-            public static void Gen(string path)
-            {
-                /*var attr = File.GetAttributes(path);
-                if ((attr & FileAttributes.Directory) == FileAttributes.Directory)
-                {
-                    var extension = new List<string> {".xlsx", "xls"};
-                    foreach (var node in Directory.GetFiles(path, "*.*").Where(f => extension.Contains(Path.GetExtension(f))))
-                    {
-                        WorkBookCore.AnalyzerExcel(node);
-                        Console.WriteLine($"导出{node}成功");
-                    }
-                }
-                else
-                {
-                    WorkBookCore.AnalyzerExcel(path);
-                    Console.WriteLine($"导出{path}成功");
-                }*/
-            }
-            
             public static void StartServer(string path)
             {
                 Console.WriteLine("开启服务器成功");
                 path = Path.GetDirectoryName(path);
                 _watcher = new FileSystemWatcher(path);
                 GC.KeepAlive(_watcher);
-                _watcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.Attributes | NotifyFilters.Security | NotifyFilters.Size | NotifyFilters.CreationTime;
+                _watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.Size | NotifyFilters.CreationTime;
+                _watcher.InternalBufferSize = 1024 * 1024 * 30;
 //                fsw.Path = path;
-                _watcher.Filter = "*.csv";
+                _watcher.Filter = "*.xlsx";
                 _watcher.Changed+=FswOnChanged;
                 _watcher.Error += FswOnError;
                 _watcher.IncludeSubdirectories = true;
 
                 _watcher.EnableRaisingEvents = true;
+                
+                List<MetadataReference> references = new List<MetadataReference>();
             }
 
             private static void FswOnError(object sender, ErrorEventArgs e)
@@ -82,7 +62,9 @@ namespace CrossPlatformGenerator
                 if (e.ChangeType == WatcherChangeTypes.Changed)
                 {
                     string fileName = Path.GetFileName(e.FullPath);
-                    if( DateTime.Now.Subtract (_lastTimeFileWatcherEventRaised).TotalMilliseconds < 800 )
+                    if (fileName.StartsWith("~$",StringComparison.OrdinalIgnoreCase))
+                        return;
+                    if( DateTime.Now.Subtract (_lastTimeFileWatcherEventRaised).TotalMilliseconds < 1000 )
                     {
                         return;
                     }
@@ -96,7 +78,7 @@ namespace CrossPlatformGenerator
                         if (fileName.StartsWith("~"))
                             return;
                         //WorkBookCore.AnalyzerExcel(e.FullPath);
-                        new CSVSerialize().AnalyzerExcel(e.FullPath);
+                        new ExcelSerialize().AnalyzerExcel(e.FullPath);
                     }
                     catch(Exception exception)
                     {

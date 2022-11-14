@@ -32,7 +32,7 @@ namespace CrossPlatformGenerator
         {
             public string Name;
             public List<EnumValue> Values = new List<EnumValue>();
-
+            public bool IsFlag;
             public EnumDefine(string name)
             {
                 Name = name;
