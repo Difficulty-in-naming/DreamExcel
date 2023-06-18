@@ -1,0 +1,76 @@
+﻿/********************************
+  该脚本是自动生成的请勿手动修改
+*********************************/
+using System;
+using System.Collections.Generic;
+using Newtonsoft.Json;
+using Config.ConfigCore;
+using UnityEngine;
+using UnityEngine.Networking;
+using System.IO;
+namespace RestaurantPreview.Config
+{
+[%CustomClass]
+{
+	public partial class [@Class]
+	{
+[%Field]{        private [@Type] m[@Name];}
+    [%Property]
+    {
+        public [@Type] [@Name]
+        {
+        	get{ return m[@Name]; }
+        	set{ m[@Name] = value; }
+        }
+    }
+	}
+}
+[%CoreClass]
+{
+	public partial class [@Class]Property : ConfigAssetManager<[@Class]Property>
+	{
+		[%Enum]
+		{
+		public enum [@Name]
+		{
+[%Nested]{            [@Key][@Value], }
+		}
+		}
+		
+[%Field]{		private [@Type] m[@Name];}
+		[%Property]
+		{
+		/// <summary>
+		/// [@Comment]
+		/// </summary>
+		public [@Type] [@Name]
+		{
+			get => m[@Name];
+			set => m[@Name] = value;
+		}
+		}
+
+		public static [@Class]Property Read([@KeyType] id, bool throwException = true)
+		{
+			return ConfigAssetManager<[@Class]Property>.Read(id, throwException);
+		}
+[%HasKey]
+{
+		public static [@Class]Property Read([@KeyType] id, bool throwException = true)
+		{
+			return ConfigAssetManager<[@Class]Property>.Read(id, throwException);
+		}
+}
+
+		public static Dictionary<[@KeyType],[@Class]Property> ReadDict()
+		{
+			return ConfigAssetManager<[@Class]Property>.Read[@KeyType]Dict();
+		}
+
+		public static List<[@Class]Property> ReadList()
+		{
+			return ConfigAssetManager<[@Class]Property>.ReadList();
+		}
+	}
+}
+}

@@ -50,5 +50,13 @@ Temporary Items
 obj
 bin
 packages
-excel call/TestExcel_Auto.xlsx
-CrossPlatformGenerator/Publish
+/Dotnet/excel call/TestExcel_Auto.xlsx
+/Dotnet/CrossPlatformGenerator/Publish
+/Unity/Build/
+/Unity/Library/
+/Unity/Logs/
+/Unity/Temp/
+/Unity/Log.txt
+/Unity/*.csproj
+/Unity/*.sln
+/Unity/UserSettings/

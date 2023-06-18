@@ -1,0 +1,60 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <LangVersion>11</LangVersion>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+    <ItemGroup>
+      <PackageReference Include="Hocon" Version="2.0.3" />
+      <PackageReference Include="Hocon.Json" Version="2.1.2" />
+      <PackageReference Include="MemoryPack" Version="1.8.13" />
+      <PackageReference Include="MessagePack" Version="2.4.35" />
+      <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.4.0" />
+      <PackageReference Include="Nett" Version="0.15.0" />
+      <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+      <PackageReference Include="NPOI" Version="2.5.6" />
+      <PackageReference Include="protobuf-net" Version="3.1.25" />
+      <PackageReference Include="ScriptGenerateNetCore" Version="1.0.1" />
+      <PackageReference Include="sqlite-net" Version="1.6.292" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="Publish\**" />
+      <Compile Include="..\..\Unity\Assets\Scripts\Core\**\*.cs">
+          <Link>Core\%(RecursiveDir)%(FileName)%(Extension)</Link>
+      </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Remove="Publish\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Publish\**" />
+      <None Update="GenerateTemplate.txt">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Config.txt">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="MemoryPack.Generator.Roslyn3">
+        <HintPath>..\..\Unity\Assets\Scripts\ThirdParty\MemoryPack.Generator.Roslyn3.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="MasterMemory" Version="2.1.2" />
+        <!-- Install MSBuild Task(with PrivateAssets="All", it means to use dependency only in build time). -->
+        <PackageReference Include="MasterMemory.MSBuild.Tasks" Version="2.1.2" PrivateAssets="All" />
+    </ItemGroup>
+    <ItemGroup>
+      <Content Include="..\..\Unity\Assets\Scripts\ThirdParty\MemoryPack.Generator.Roslyn3.dll">
+        <Link>MemoryPack.Generator.Roslyn3.dll</Link>
+      </Content>
+    </ItemGroup>
+</Project>

@@ -80,11 +80,12 @@ How To Use
 ===
 在Config中修改GeneratorType的属性去生成不同的类型的数据文件
 
+Unity中使用MemoryPack
+===
+1.修改Build.cmd中的Unity路径/或者自己导入Unity然后将项目导出
+2.修改Config的导出类型
+
 FAQ
 ===
 Q：我的CSV使用的是空格作为分隔符.使用这个项目可以正常导出数据文件吗
 A：可以,你只需要修改Config.txt中的CSVDelimiters属性的格式为空格就可以了
-
-正在计划
-===
-- 使用字节流导出sqlite

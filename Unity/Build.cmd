@@ -1,0 +1,2 @@
+cd %~dp0
+D:\Unity\Hub\Editor\2021.3.8f1\Editor\Unity.exe -force-free -batchmode -projectPath "./" -buildWindows64Player "Build\Unity.exe" -logFile "./Log.txt" -quit -disable-gpu-skinning -noUpm -silent-crashes
