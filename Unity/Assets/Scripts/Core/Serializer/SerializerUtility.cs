@@ -152,7 +152,8 @@ namespace CrossPlatformGenerator.Core
                         {
                             try
                             {
-                                Assembly.LoadFrom(node);
+                                var bytes = File.ReadAllBytes(node);
+                                Assembly.Load(bytes);
                                 if(!node.Contains("MemoryPack",StringComparison.OrdinalIgnoreCase) && !node.Contains("MessagePack",StringComparison.OrdinalIgnoreCase))
                                     references.Add(MetadataReference.CreateFromFile(node));
                             }
@@ -197,7 +198,10 @@ namespace CrossPlatformGenerator.Core
             {
                 var type = assembly.GetTypeByName(fileName);
                 var t = typeof(Dictionary<,>).MakeGenericType(records.GetIdType() == "int" ? typeof(int) : typeof(string), type);
-                object g = JsonConvert.DeserializeObject(getJObject.ToString(), t);
+                var jsonSerializerSettings = new JsonSerializerSettings();
+                jsonSerializerSettings.TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Full;
+                jsonSerializerSettings.FloatParseHandling = FloatParseHandling.Decimal;
+                object g = JsonConvert.DeserializeObject(getJObject.ToString(), t, jsonSerializerSettings);
                 if (bytesFlag == BytesFlag.MessagePack)
                 {
                     var options = MessagePackSerializerOptions.Standard.WithResolver(StandardResolver.Instance).WithCompression(MessagePackCompression.Lz4Block);

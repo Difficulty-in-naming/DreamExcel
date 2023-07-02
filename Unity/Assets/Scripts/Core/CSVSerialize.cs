@@ -105,7 +105,7 @@ namespace DreamExcel.Core
 
             public string GetName(int index)
             {
-                return Rows[Config.NameRow][index];
+                return Rows[Config.NameRow][index].Trim();
             }
 
             public string GetComment(int index)
@@ -115,7 +115,7 @@ namespace DreamExcel.Core
             
             public string GetType(int index)
             {
-                return Rows[Config.TypeRow][index];
+                return Rows[Config.TypeRow][index].Trim();
             }
         }
 

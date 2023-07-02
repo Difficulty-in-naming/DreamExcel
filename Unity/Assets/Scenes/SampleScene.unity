@@ -152,6 +152,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a77181cf5d8d3854daecc22337a9f270, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  MonitorDir: C:\Dev\Project\Temp\IdleGame\Excel\Client
 --- !u!4 &619870785
 Transform:
   m_ObjectHideFlags: 0

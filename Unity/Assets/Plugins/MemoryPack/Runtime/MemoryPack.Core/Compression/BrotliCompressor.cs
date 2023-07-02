@@ -85,7 +85,8 @@ public
 
         using var encoder = new BrotliEncoder(quality, window);
 
-        var maxLength = BrotliEncoder.GetMaxCompressedLength(bufferWriter.TotalWritten);
+        var maxLength = BrotliUtils.BrotliEncoderMaxCompressedSize(bufferWriter.TotalWritten);
+
         var finalBuffer = ArrayPool<byte>.Shared.Rent(maxLength);
         try
         {
@@ -144,6 +145,47 @@ public
         finally
         {
             encoder.Dispose();
+        }
+    }
+
+    public async ValueTask CopyToAsync(Stream stream, int bufferSize = 65535, CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+
+        using var encoder = new BrotliEncoder(quality, window);
+
+        var buffer = ArrayPool<byte>.Shared.Rent(bufferSize);
+        try
+        {
+            foreach (var item in bufferWriter)
+            {
+                var source = item;
+                var lastResult = OperationStatus.DestinationTooSmall;
+                while (lastResult == OperationStatus.DestinationTooSmall)
+                {
+                    lastResult = encoder.Compress(source.Span, buffer, out int bytesConsumed, out int bytesWritten, isFinalBlock: false);
+                    if (lastResult == OperationStatus.InvalidData) MemoryPackSerializationException.ThrowCompressionFailed();
+                    if (bytesWritten > 0)
+                    {
+                        await stream.WriteAsync(buffer.AsMemory(0, bytesWritten), cancellationToken).ConfigureAwait(false);
+                    }
+                    if (bytesConsumed > 0)
+                    {
+                        source = source.Slice(bytesConsumed);
+                    }
+                }
+            }
+
+            // call BrotliEncoderOperation.Finish
+            var finalStatus = encoder.Compress(ReadOnlySpan<byte>.Empty, buffer, out var consumed, out var written, isFinalBlock: true);
+            if (written > 0)
+            {
+                await stream.WriteAsync(buffer.AsMemory(0, written), cancellationToken).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
         }
     }
 
@@ -278,6 +320,19 @@ internal static partial class BrotliUtils
 #endif
             _ => throw new ArgumentException()
         };
+
+
+    // https://github.com/dotnet/runtime/issues/35142
+    // BrotliEncoder.GetMaxCompressedLength is broken in .NET 7
+    // port from encode.c https://github.com/google/brotli/blob/3914999fcc1fda92e750ef9190aa6db9bf7bdb07/c/enc/encode.c#L1200
+    internal static int BrotliEncoderMaxCompressedSize(int input_size)
+    {
+        var num_large_blocks = input_size >> 14;
+        var overhead = 2 + (4 * num_large_blocks) + 3 + 1;
+        var result = input_size + overhead;
+        if (input_size == 0) return 2;
+        return (result < input_size) ? 0 : result;
+    }
 }
 
 }
