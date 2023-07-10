@@ -86,6 +86,7 @@ namespace DreamExcel.Core
             public string[] ReferenceDlls { get; set; } = Array.Empty<string>();
             public string CodeSuffix { get; set; }
             public bool FormatCode { get; set; }
+            public string[] SearchJsonConverterFromDll { get; set; } = Array.Empty<string>();
         }
 
         public static void WriteScript(string file, string content)

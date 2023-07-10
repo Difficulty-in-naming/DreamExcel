@@ -123,7 +123,6 @@ namespace CrossPlatformGenerator.Core
         
         public static void WriteBytes(this ExcelSerialize.CSVRecords records, string dbFilePath, string script, string fileName,BytesFlag bytesFlag)
         {
-            var getJObject = GetJObject(records);
             if (!Assemblies.TryGetValue(script, out var assembly))
             {
                 List<SyntaxTree> classes = new List<SyntaxTree>();
@@ -194,6 +193,9 @@ namespace CrossPlatformGenerator.Core
                 assembly = Assembly.Load(ms.ToArray());
                 //Assemblies.Add(script, assembly);
             }
+            
+            var getJObject = GetJObject(records);
+
             try
             {
                 var type = assembly.GetTypeByName(fileName);
@@ -201,6 +203,8 @@ namespace CrossPlatformGenerator.Core
                 var jsonSerializerSettings = new JsonSerializerSettings();
                 jsonSerializerSettings.TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Full;
                 jsonSerializerSettings.FloatParseHandling = FloatParseHandling.Decimal;
+                JsonConverter[] converters = GetAllJsonConverters();
+                jsonSerializerSettings.Converters = converters;
                 object g = JsonConvert.DeserializeObject(getJObject.ToString(), t, jsonSerializerSettings);
                 if (bytesFlag == BytesFlag.MessagePack)
                 {
@@ -248,6 +252,47 @@ namespace CrossPlatformGenerator.Core
                 string errorMessage = sb.ToString();
                 Console.WriteLine(errorMessage);
             }
+        }
+        public static JsonConverter[] GetAllJsonConverters()
+        {
+            // 获取当前应用程序域中的所有程序集
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            var ass = new List<Assembly>();
+            foreach (var node in assemblies)
+            {
+                if (Config.Info.SearchJsonConverterFromDll.Contains(node.ToString().Remove(node.ToString().IndexOf(","))))
+                {
+                    ass.Add(node);
+                }
+            }
+            // 获取所有继承自JsonConverter的类型
+            var converterTypes = ass
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(type => type.IsSubclassOf(typeof(JsonConverter)) && !type.IsAbstract);
+
+
+            List<Type> types = new List<Type>();
+            int index = 0;
+            try
+            {
+                foreach (var node in converterTypes)
+                {
+                    index++;
+                    types.Add(node);
+                }
+            }
+            catch(Exception e)
+            {
+                index++;
+                Console.WriteLine(e);
+            }
+
+            // 创建每个类型的实例并转换为数组
+            var converters = types
+                .Select(type => Activator.CreateInstance(type) as JsonConverter)
+                .ToArray();
+
+            return converters;
         }
     }
 }

@@ -1,11 +1,19 @@
 ﻿#生成后的脚本存放的位置,如果填写盘符则为绝对路径不填写则为当前活动表格的相对路径
-SaveScriptPath = ["../../../Assets/Scripts/DB/GameData"]
+SaveScriptPath = ["../../Assets/Scripts/Core/Model/Config"]
 #生成后的数据库存放位置,如果填写盘符则为绝对路径不填写则为当前活动表格的相对路径
-SaveDbPath = ["../../../Assets/Res/DB/GameData"]
+SaveDbPath = ["../../Assets/Res/Config/Client"]
 #文件后缀名带有该后缀名的可以享有该插件的所有能力
 FileSuffix = "_Auto"
 #枚举类型后缀
 EnumSuffix = "Enum"
+#导出MessagePack/Protobuf这类二进制文件需要引用程序集
+ReferenceDlls = ["../../Library/ScriptAssemblies"]
 #生成的数据库类型   目前支持DB,Json
-GeneratorType = "Json"
-CSVDelimiters = [","]
+GeneratorType = "MemoryPack"
+CSVDelimiters = ["	"]
+#导出代码后缀名
+CodeSuffix = ".cs"
+#是否格式化代码(仅当使用c#的时候才打开)
+FormatCode = true
+#导入JsonConverter程序集
+SearchJsonConverterFromDll = ["Assembly-CSharp","EdgeStudio.Core","EdgeStudio.Core.Player","EdgeStudio.Model","Panthea.Utils","Panthea.Utils.Player"]
