@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -57,7 +58,14 @@ namespace DreamExcel.Core
                                 if (j >= 0 && j < Rows[i].Length)
                                 {
                                     if (cell.CellType == CellType.Formula)
-                                        Rows[i][j] = cell.StringCellValue;
+                                    {
+                                        if(cell.CachedFormulaResultType == CellType.Numeric)
+                                            Rows[i][j] = cell.NumericCellValue.ToString(CultureInfo.InvariantCulture);
+                                        else if(cell.CachedFormulaResultType == CellType.String)
+                                            Rows[i][j] = cell.StringCellValue;
+                                        else if(cell.CachedFormulaResultType == CellType.Boolean)
+                                            Rows[i][j] = cell.BooleanCellValue.ToString();
+                                    }
                                     else
                                         Rows[i][j] = cellString;
                                 }
@@ -105,7 +113,8 @@ namespace DreamExcel.Core
 
             public string GetName(int index)
             {
-                return Rows[Config.NameRow][index].Trim();
+                var key = Rows[Config.NameRow][index];
+                return string.IsNullOrEmpty(key) ? null! : key.Trim();
             }
 
             public string GetComment(int index)
@@ -115,7 +124,8 @@ namespace DreamExcel.Core
             
             public string GetType(int index)
             {
-                return Rows[Config.TypeRow][index].Trim();
+                var key = Rows[Config.TypeRow][index];
+                return string.IsNullOrEmpty(key) ? null! : key.Trim();
             }
 
             public string GetOwner(int index)
@@ -198,13 +208,15 @@ namespace DreamExcel.Core
                 {
                     var t = mRecords.GetType(i);
                     var n = mRecords.GetName(i);
-                    if (string.IsNullOrEmpty(n))
+                    if (string.IsNullOrEmpty(n) || string.IsNullOrEmpty(t))
                         continue;
                     if (n.StartsWith("*"))
                         continue;
                     if (string.IsNullOrEmpty(t))
                         continue;
                     var comment = mRecords.GetComment(i);
+                    comment = comment.Replace("\n", "\n\t\t/// ");
+                    comment = comment.Replace("\r\n", "\r\n\t\t/// ");
                     var customClass = t.Split(Config.SplitChar2, StringSplitOptions.RemoveEmptyEntries);
                     if (customClass.Length > 1) //发现这个类型是自定义类型
                     {

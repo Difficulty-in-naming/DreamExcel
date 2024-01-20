@@ -110,7 +110,8 @@ namespace CrossPlatformGenerator.Core
                             throw new ExcelException($"单元格:{cell.FormatAsString()} 格式错误 \n " + e);
                         }
                     }
-                    jObject.Add(key, jValue);
+                    if(!string.IsNullOrEmpty(key))
+                        jObject.Add(key, jValue);
                 }
                 catch(Exception e)
                 {

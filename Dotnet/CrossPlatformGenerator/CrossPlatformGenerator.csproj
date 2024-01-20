@@ -14,7 +14,7 @@
       <PackageReference Include="MessagePack" Version="2.4.35" />
       <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.4.0" />
       <PackageReference Include="Nett" Version="0.15.0" />
-      <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
       <PackageReference Include="NPOI" Version="2.5.6" />
       <PackageReference Include="protobuf-net" Version="3.1.25" />
       <PackageReference Include="ScriptGenerateNetCore" Version="1.0.1" />
