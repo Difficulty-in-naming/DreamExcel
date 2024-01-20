@@ -12,17 +12,12 @@ namespace DreamExcel.Core
         /// <summary>
         ///     第X行开始才是正式数据
         /// </summary>
-        public const int StartLine = 3;
+        public const int StartLine = 4;
 
         /// <summary>
         ///     关键Key值,这个值在Excel表里面必须存在
         /// </summary>
         public const string DataKey = "Id";
-
-        /// <summary>
-        ///     类型的所在行
-        /// </summary>
-        public const int TypeRow = 2;
 
         /// <summary>
         ///     注释内容的所在行
@@ -33,6 +28,16 @@ namespace DreamExcel.Core
         ///     变量名称的所在行
         /// </summary>
         public const int NameRow = 1;
+        
+        /// <summary>
+        ///     类型的所在行
+        /// </summary>
+        public const int TypeRow = 2;
+        
+        /// <summary>
+        ///     所属内容的所在行(可以自定义标记输出)
+        /// </summary>
+        public const int OwnerRow = 4;
 
         public static char[] SplitChar1 = { ',' };
         public static char[] SplitChar2 = { ';' };
