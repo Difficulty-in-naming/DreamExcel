@@ -11,7 +11,7 @@
       <PackageReference Include="Hocon" Version="2.0.3" />
       <PackageReference Include="Hocon.Json" Version="2.1.2" />
       <PackageReference Include="MemoryPack" Version="1.8.13" />
-      <PackageReference Include="MessagePack" Version="2.4.35" />
+      <PackageReference Include="MessagePack" Version="2.5.187" />
       <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.4.0" />
       <PackageReference Include="Nett" Version="0.15.0" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
